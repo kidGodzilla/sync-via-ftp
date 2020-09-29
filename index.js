@@ -3,7 +3,12 @@ const md5 = require('md5');
 const fs = require('fs');
 let debug = 0;
 
-module.exports = function syncViaFtp (namespace, config) {
+/**
+ * Sync via FTP for simple, lightweight persistence for tiny apps
+ * Syncs a global value bi-directionally to a local .json file.
+ * Optionally syncs to an FTP server if FTP information is available in process.env
+ */
+module.exports = function syncViaFtp (namespace, config, cb) {
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
@@ -25,7 +30,7 @@ module.exports = function syncViaFtp (namespace, config) {
     }
 
     // Get remote file via FTP, save as local file, & bootstrap to object
-    function bootstrapFromFtp (namespace) {
+    function bootstrapFromFtp (namespace, cb) {
         let ftpClient = connectToFtp();
 
         ftpClient.on('ready', function() {
@@ -36,7 +41,7 @@ module.exports = function syncViaFtp (namespace, config) {
                 stream.pipe(fs.createWriteStream(`./${ namespace }.json`));
 
                 stream.once('close', function () {
-                    setTimeout(() => { bootstrap(namespace) }, 400);
+                    setTimeout(() => { bootstrap(namespace, cb) }, 400);
                     ftpClient.end();
                 });
             });
@@ -44,7 +49,7 @@ module.exports = function syncViaFtp (namespace, config) {
     }
 
     // Bootstrap from local file to object
-    function bootstrap (namespace) {
+    function bootstrap (namespace, cb) {
         if (debug) console.log('Bootstrapping local files');
         let obj = global[namespace];
 
@@ -56,6 +61,9 @@ module.exports = function syncViaFtp (namespace, config) {
 
         // Failsafe
         if (typeof global[namespace] !== 'object') global[namespace] = {};
+
+        // Callback
+        if (cb && typeof cb === 'function') cb(namespace);
     }
 
     // Persist in-memory data to json file & sync via FTP
@@ -86,7 +94,7 @@ module.exports = function syncViaFtp (namespace, config) {
     setInterval(function () {
         persist(namespace);
     }, interval * 1000);
-    bootstrapFromFtp();
-    bootstrap();
+    bootstrapFromFtp(namespace, cb);
+    bootstrap(namespace, cb);
     return {};
 }
