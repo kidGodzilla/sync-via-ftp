@@ -1,7 +1,7 @@
 {
   "name": "sync-via-ftp",
   "version": "0.2.7",
-  "description": "",
+  "description": "Sync provides simple, lightweight persistence for tiny apps",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
