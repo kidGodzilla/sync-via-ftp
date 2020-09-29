@@ -119,7 +119,7 @@ console.log(result);
 
 ## Module Lifecycle
 
-1. Upon invoking `global.postData = syncViaFtp('postData');`, postData will immediately be assigned with an empty object
+1. Upon invoking `global.postData = syncViaFtp('postData');`, postData will immediately be assigned with an empty object (or the current state of `global[namespace]`)
 2. `syncViaFtp` will attempt to read `./postData.json` and assign the contents to `global.postData`.
 3. If a callback has been passed to `syncViaFtp` as its third parameter, it will be executed.
 4. If `FTP_HOST, FTP_USER, & FTP_PASS` are present in `process.env`, `syncViaFtp()` will connect to the FTP server and attempt to retrieve `postData.json`.

@@ -96,5 +96,6 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     }, interval * 1000);
     bootstrapFromFtp(namespace, cb);
     bootstrap(namespace, cb);
-    return {};
+
+    return global[namespace];
 }
