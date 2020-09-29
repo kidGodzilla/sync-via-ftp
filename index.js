@@ -1,0 +1,92 @@
+const Client = require('ftp');
+const md5 = require('md5');
+const fs = require('fs');
+let debug = 0;
+
+module.exports = function syncViaFtp (namespace, config) {
+    if (typeof global[namespace] !== 'object') global[namespace] = {};
+    if (!global._lastSyncValues) global._lastSyncValues = {};
+    const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
+    let { interval } = config || { interval: 20 };
+
+    // Shorthand to connect to OUR ftp client
+    function connectToFtp () {
+        let ftpClient = new Client();
+
+        if (FTP_HOST && FTP_USER && FTP_PASS) {
+            ftpClient.connect({
+                host: FTP_HOST,
+                user: FTP_USER,
+                password: FTP_PASS
+            });
+        }
+
+        return ftpClient;
+    }
+
+    // Get remote file via FTP, save as local file, & bootstrap to object
+    function bootstrapFromFtp (namespace) {
+        let ftpClient = connectToFtp();
+
+        ftpClient.on('ready', function() {
+            ftpClient.get(`${ namespace }.json`, function(err, stream) {
+                if (err) return console.log(err);
+
+                if (debug) console.log(`Writing ${ namespace }.json`);
+                stream.pipe(fs.createWriteStream(`./${ namespace }.json`));
+
+                stream.once('close', function () {
+                    setTimeout(() => { bootstrap(namespace) }, 400);
+                    ftpClient.end();
+                });
+            });
+        });
+    }
+
+    // Bootstrap from local file to object
+    function bootstrap (namespace) {
+        if (debug) console.log('Bootstrapping local files');
+        let obj = global[namespace];
+
+        try {
+            let obj_string = fs.readFileSync(`./${ namespace }.json`).toString();
+            try { obj_string = JSON.parse(obj_string) } catch(e){}
+            global[namespace] = Object.assign(obj, obj_string);
+        } catch(e){}
+
+        // Failsafe
+        if (typeof global[namespace] !== 'object') global[namespace] = {};
+    }
+
+    // Persist in-memory data to json file & sync via FTP
+    function persist (namespace) {
+        if (debug) console.log('Persisting files locally');
+
+        let json_string = JSON.stringify(global[namespace], null, 2);
+        let hash = json_string ? md5(json_string) : '';
+
+        if (hash === global._lastSyncValues[namespace]) return;
+        global._lastSyncValues[namespace] = hash;
+
+        fs.writeFileSync(`./${ namespace }.json`, json_string, 'utf-8');
+
+        let ftpClient = connectToFtp();
+
+        ftpClient.on('ready', function() {
+            if (debug) console.log(`Uploading ${ namespace }.json`);
+
+            ftpClient.put(`${ namespace }.json`, `${ namespace }.json`, function (err) {
+                if (err) return console.log(err);
+                ftpClient.end();
+            });
+        });
+    }
+
+    // Set up persistence for our object
+    setInterval(function () {
+        persist(namespace);
+    }, interval * 1000);
+    bootstrapFromFtp();
+    bootstrap();
+    return {};
+}

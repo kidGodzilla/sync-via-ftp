@@ -1,0 +1,24 @@
+{
+  "name": "sync-via-ftp",
+  "version": "0.2.7",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kidGodzilla/sync-via-ftp.git"
+  },
+  "author": "James Futhey <futhey@gmail.com> (http://jamesfuthey.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kidGodzilla/sync-via-ftp/issues"
+  },
+  "homepage": "https://github.com/kidGodzilla/sync-via-ftp#readme",
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "ftp": "^0.3.10",
+    "md5": "^2.3.0"
+  }
+}
