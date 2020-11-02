@@ -63,6 +63,19 @@ const syncViaFtp = require('sync-via-ftp');
 global.postData = syncViaFtp('postData', { interval: 10 });
 ```
 
+## Using custom paths
+
+You can specify custom paths (local or remote) with the configuration options `localPath` and `remotePath`.
+
+Both should end in a slash, and either be a relative directory from your app, or an absolute directory.
+
+```js
+const syncViaFtp = require('sync-via-ftp');
+
+global.postData = syncViaFtp('postData', { interval: 10, localPath: './storage/', remotePath: 'storage/' });
+
+```
+ 
 ## Use a custom callback
 
 This will be executed each time data is read to memory (once when reading from a local file, and again if updated from a remote FTP server)

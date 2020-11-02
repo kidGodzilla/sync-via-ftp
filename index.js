@@ -12,7 +12,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
-    let { interval, localPath, remotePath } = config || { interval: 20, localPath: '', remotePath: '' };
+    let { interval, localPath, remotePath } = config || { interval: 20, localPath: './', remotePath: '' };
 
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
@@ -38,7 +38,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
                 if (err) return console.log(err);
 
                 if (debug) console.log(`Writing ${ namespace }.json`);
-                stream.pipe(fs.createWriteStream(`./${ localPath }${ namespace }.json`));
+                stream.pipe(fs.createWriteStream(`${ localPath }${ namespace }.json`));
 
                 stream.once('close', function () {
                     setTimeout(() => { bootstrap(namespace, cb) }, 400);
@@ -56,7 +56,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         try {
             let obj_string = null;
 
-            try { fs.readFileSync(`./${ localPath }${ namespace }.json`).toString() } catch(e){}
+            try { fs.readFileSync(`${ localPath }${ namespace }.json`).toString() } catch(e){}
             try { obj_string = JSON.parse(obj_string) } catch(e){}
             global[namespace] = Object.assign(obj, obj_string || {});
         } catch(e){}
@@ -78,7 +78,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         if (hash === global._lastSyncValues[namespace]) return;
         global._lastSyncValues[namespace] = hash;
 
-        fs.writeFileSync(`./${ localPath }${ namespace }.json`, json_string, 'utf-8');
+        fs.writeFileSync(`${ localPath }${ namespace }.json`, json_string, 'utf-8');
 
         let ftpClient = connectToFtp();
 
