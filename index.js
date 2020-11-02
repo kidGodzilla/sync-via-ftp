@@ -54,9 +54,11 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         let obj = global[namespace];
 
         try {
-            let obj_string = fs.readFileSync(`./${ localPath }${ namespace }.json`).toString();
+            let obj_string = null;
+
+            try { fs.readFileSync(`./${ localPath }${ namespace }.json`).toString() } catch(e){}
             try { obj_string = JSON.parse(obj_string) } catch(e){}
-            global[namespace] = Object.assign(obj, obj_string);
+            global[namespace] = Object.assign(obj, obj_string || {});
         } catch(e){}
 
         // Failsafe
