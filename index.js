@@ -12,7 +12,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
-    let { interval } = config || { interval: 20 };
+    let { interval, localPath, remotePath } = config || { interval: 20, localPath: '', remotePath: '' };
 
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
@@ -34,11 +34,11 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         let ftpClient = connectToFtp();
 
         ftpClient.on('ready', function() {
-            ftpClient.get(`${ namespace }.json`, function(err, stream) {
+            ftpClient.get(`${ remotePath }${ namespace }.json`, function(err, stream) {
                 if (err) return console.log(err);
 
                 if (debug) console.log(`Writing ${ namespace }.json`);
-                stream.pipe(fs.createWriteStream(`./${ namespace }.json`));
+                stream.pipe(fs.createWriteStream(`./${ localPath }${ namespace }.json`));
 
                 stream.once('close', function () {
                     setTimeout(() => { bootstrap(namespace, cb) }, 400);
@@ -54,7 +54,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         let obj = global[namespace];
 
         try {
-            let obj_string = fs.readFileSync(`./${ namespace }.json`).toString();
+            let obj_string = fs.readFileSync(`./${ localPath }${ namespace }.json`).toString();
             try { obj_string = JSON.parse(obj_string) } catch(e){}
             global[namespace] = Object.assign(obj, obj_string);
         } catch(e){}
@@ -76,14 +76,14 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         if (hash === global._lastSyncValues[namespace]) return;
         global._lastSyncValues[namespace] = hash;
 
-        fs.writeFileSync(`./${ namespace }.json`, json_string, 'utf-8');
+        fs.writeFileSync(`./${ localPath }${ namespace }.json`, json_string, 'utf-8');
 
         let ftpClient = connectToFtp();
 
         ftpClient.on('ready', function() {
             if (debug) console.log(`Uploading ${ namespace }.json`);
 
-            ftpClient.put(`${ namespace }.json`, `${ namespace }.json`, function (err) {
+            ftpClient.put(`${ remotePath }${ namespace }.json`, `${ namespace }.json`, function (err) {
                 if (err) return console.log(err);
                 ftpClient.end();
             });
