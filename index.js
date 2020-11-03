@@ -9,10 +9,10 @@ let debug = 0;
  * Optionally syncs to an FTP server if FTP information is available in process.env
  */
 module.exports = function syncViaFtp (namespace, config, cb) {
+    let { interval, localPath, remotePath } = config || { interval: 20, localPath: './', remotePath: '' };
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
-    let { interval, localPath, remotePath } = config || { interval: 20, localPath: './', remotePath: '' };
 
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
@@ -31,6 +31,8 @@ module.exports = function syncViaFtp (namespace, config, cb) {
 
     // Get remote file via FTP, save as local file, & bootstrap to object
     function bootstrapFromFtp (namespace, cb) {
+        if (!FTP_HOST || !FTP_USER || !FTP_PASS) return;
+
         let ftpClient = connectToFtp();
 
         ftpClient.on('ready', function() {
@@ -56,7 +58,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         try {
             let obj_string = null;
 
-            try { fs.readFileSync(`${ localPath }${ namespace }.json`).toString() } catch(e){}
+            try { obj_string = fs.readFileSync(`${ localPath }${ namespace }.json`).toString() } catch(e){}
             try { obj_string = JSON.parse(obj_string) } catch(e){}
             global[namespace] = Object.assign(obj, obj_string || {});
         } catch(e){}
@@ -80,22 +82,31 @@ module.exports = function syncViaFtp (namespace, config, cb) {
 
         fs.writeFileSync(`${ localPath }${ namespace }.json`, json_string, 'utf-8');
 
-        let ftpClient = connectToFtp();
+        if (FTP_HOST && FTP_USER && FTP_PASS) {
+            let ftpClient = connectToFtp();
 
-        ftpClient.on('ready', function() {
-            if (debug) console.log(`Uploading ${ namespace }.json`);
+            ftpClient.on('ready', function() {
+                if (debug) console.log(`Uploading ${ namespace }.json`);
 
-            ftpClient.put(`${ remotePath }${ namespace }.json`, `${ namespace }.json`, function (err) {
-                if (err) return console.log(err);
-                ftpClient.end();
+                ftpClient.put(`${ remotePath }${ namespace }.json`, `${ namespace }.json`, function (err) {
+                    if (err) return console.log(err);
+                    ftpClient.end();
+                });
             });
-        });
+        }
     }
 
+    // Fix Interval
+    interval = parseInt(interval);
+    if (typeof interval !== 'number') interval = 20;
+
     // Set up persistence for our object
-    setInterval(function () {
-        persist(namespace);
-    }, interval * 1000);
+    setTimeout(() => {
+        setInterval(() => {
+            persist(namespace);
+        }, interval * 1000);
+    }, 10000);
+
     bootstrapFromFtp(namespace, cb);
     bootstrap(namespace, cb);
 
