@@ -13,6 +13,8 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
+    if (!localPath) localPath = './';
+    if (!remotePath) remotePath = '';
 
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
