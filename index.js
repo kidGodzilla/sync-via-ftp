@@ -1,3 +1,5 @@
+const writeJsonFile = require('write-json-file');
+const loadJsonFile = require('load-json-file');
 const Client = require('ftp');
 const md5 = require('md5');
 const fs = require('fs');
@@ -53,16 +55,20 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     }
 
     // Bootstrap from local file to object
-    function bootstrap (namespace, cb) {
+    async function bootstrap (namespace, cb) {
         if (debug) console.log('Bootstrapping local files');
         let obj = global[namespace];
 
         try {
             let obj_string = null;
 
-            try { obj_string = fs.readFileSync(`${ localPath }${ namespace }.json`).toString() } catch(e){}
-            try { obj_string = JSON.parse(obj_string) } catch(e){}
-            global[namespace] = Object.assign(obj, obj_string || {});
+            obj_string = await loadJsonFile(`${ localPath }${ namespace }.json`);
+            // try { obj_string = fs.readFileSync(`${ localPath }${ namespace }.json`).toString() } catch(e){}
+            // try { obj_string = JSON.parse(obj_string) } catch(e){}
+            if (typeof obj_string !== 'object') obj_string = {};
+            if (typeof obj !== 'object') obj = {};
+
+            global[namespace] = Object.assign(obj || {}, obj_string || {});
         } catch(e){}
 
         // Failsafe
@@ -76,13 +82,16 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     function persist (namespace) {
         if (debug) console.log('Persisting files locally');
 
+        if (typeof global[namespace] !== 'object') global[namespace] = {};
+
         let json_string = JSON.stringify(global[namespace], null, 2);
         let hash = json_string ? md5(json_string) : '';
 
         if (hash === global._lastSyncValues[namespace]) return;
         global._lastSyncValues[namespace] = hash;
 
-        fs.writeFileSync(`${ localPath }${ namespace }.json`, json_string, 'utf-8');
+        writeJsonFile(`${ localPath }${ namespace }.json`, global[namespace]);
+        // fs.writeFileSync(`${ localPath }${ namespace }.json`, json_string, 'utf-8');
 
         if (FTP_HOST && FTP_USER && FTP_PASS) {
             let ftpClient = connectToFtp();

@@ -1,6 +1,6 @@
 {
   "name": "sync-via-ftp",
-  "version": "0.2.15",
+  "version": "0.2.16",
   "description": "Sync provides simple, lightweight persistence for tiny apps",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,8 @@
   "dependencies": {
     "fs": "0.0.1-security",
     "ftp": "^0.3.10",
-    "md5": "^2.3.0"
+    "load-json-file": "^6.2.0",
+    "md5": "^2.3.0",
+    "write-json-file": "^4.3.0"
   }
 }
