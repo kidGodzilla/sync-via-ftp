@@ -38,6 +38,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     function bootstrapFromFtp (namespace, cb) {
         if (!FTP_HOST || !FTP_USER || !FTP_PASS) {
             if (cb && typeof cb === 'function') cb();
+            if (type !== 'json') ready();
             return;
         }
 
