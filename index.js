@@ -11,14 +11,15 @@ let debug = 0;
  * Optionally syncs to an FTP server if FTP information is available in process.env
  */
 module.exports = function syncViaFtp (namespace, config, cb) {
-    let defaults = config || { interval: 20, localPath: './', remotePath: '' };
-    let { interval, localPath, remotePath } = Object.assign(defaults, (config || defaults));
+    let defaults = { interval: 20, localPath: './', remotePath: '', type: 'json' };
+    let { interval, localPath, remotePath, type } = Object.assign(defaults, (config || defaults));
     if (typeof global[namespace] !== 'object') global[namespace] = {};
     if (!global._lastSyncValues) global._lastSyncValues = {};
     const { FTP_HOST, FTP_USER, FTP_PASS } = process.env;
     if (!localPath) localPath = './';
     if (!remotePath) remotePath = '';
     if (!interval) interval = 20;
+    if (!type) type = 'json';
 
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
