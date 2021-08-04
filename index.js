@@ -125,7 +125,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
                     if (cb && typeof cb === 'function') cb();
                 });
             });
-        }
+        } else if (cb && typeof cb === 'function') cb();
     }
 
     // Set up persistence for our object
