@@ -36,7 +36,10 @@ module.exports = function syncViaFtp (namespace, config, cb) {
 
     // Get remote file via FTP, save as local file, & bootstrap to object
     function bootstrapFromFtp (namespace, cb) {
-        if (!FTP_HOST || !FTP_USER || !FTP_PASS) return;
+        if (!FTP_HOST || !FTP_USER || !FTP_PASS) {
+            if (cb && typeof cb === 'function') cb();
+            return;
+        }
 
         let ftpClient = connectToFtp();
 
