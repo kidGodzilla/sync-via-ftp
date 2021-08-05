@@ -21,7 +21,9 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     // Shorthand to connect to OUR ftp client
     function connectToFtp () {
         let ftpClient = new Client();
-        destroy = ftpClient.destroy;
+        destroy = function () {
+            try { ftpClient.destroy() } catch(e) { console.log(e) }
+        };
 
         if (FTP_HOST && FTP_USER && FTP_PASS) {
             ftpClient.connect({
@@ -45,6 +47,8 @@ module.exports = function syncViaFtp (namespace, config, cb) {
         let ftpClient = connectToFtp();
 
         ftpClient.on('ready', function() {
+            if (debug) console.log(`Downloading ${ namespace }${ type === 'json' ? '.json' : '' }`);
+
             ftpClient.get(`${ remotePath }${ namespace }${ type === 'json' ? '.json' : '' }`, function(err, stream) {
                 if (err) return console.log(err);
 
@@ -65,6 +69,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
     // Bootstrap from local file to object
     async function bootstrap (namespace, cb) {
         if (type !== 'json') {
+            if (debug) console.log('Bootstrapping, not json')
             if (cb && typeof cb === 'function') cb();
             ready();
             return;
@@ -90,7 +95,7 @@ module.exports = function syncViaFtp (namespace, config, cb) {
 
         // Callback
         if (cb && typeof cb === 'function') cb(namespace);
-        ready();
+        if (type === 'json') ready();
     }
 
     // Persist in-memory data to json file & sync via FTP
